@@ -9,8 +9,8 @@ x = torch.randn(batch, seqlen, dmodel)
 msa = MSA(dmodel, h)
 
 t_cpu = benchmark.Timer(
-    stmt='with torch.no_grad(): msa.forward_einsum(x)',
-    globals={'x': x, 'msa': msa})
+    stmt="with torch.no_grad(): msa.forward_einsum(x)", globals={"x": x, "msa": msa}
+)
 
 print(t_cpu.timeit(100))
 
@@ -18,8 +18,8 @@ msa = MSA(dmodel, h).cuda()
 x = torch.randn(batch, seqlen, dmodel).cuda()
 
 t_gpu = benchmark.Timer(
-    stmt='with torch.no_grad(): msa.forward_einsum(x)',
-    globals={'x': x, 'msa': msa})
+    stmt="with torch.no_grad(): msa.forward_einsum(x)", globals={"x": x, "msa": msa}
+)
 
 print(t_gpu.timeit(100))
 

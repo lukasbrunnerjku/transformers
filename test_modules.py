@@ -1,5 +1,6 @@
 import torch
-from . modules import *
+from .modules import *
+
 
 def test_EncoderBlock_forward():
 
@@ -10,6 +11,7 @@ def test_EncoderBlock_forward():
     y = block(x)
     assert y.shape == x.shape
 
+
 def test_MSA_forward():
 
     batch, seqlen, dmodel, h = 2, 9, 512, 8
@@ -18,12 +20,13 @@ def test_MSA_forward():
     y = msa(x)
     assert y.shape == x.shape
 
+
 def compare_MSA_forward():
 
     batch, seqlen, dmodel, h = 2, 9, 512, 8
     msa = MSA(dmodel, h)
     x = torch.randn(batch, seqlen, dmodel)
-    
+
     y = msa.forward(x)
     y_einsum = msa.forward_einsum(x)
 
@@ -31,7 +34,7 @@ def compare_MSA_forward():
 
 
 def test_VisionTransformer_forward():
-    
+
     dmodel = 512
     h = 8
     hidden_mult = 4
@@ -46,35 +49,35 @@ def test_VisionTransformer_forward():
 
     assert H % patch_size == 0
     assert W % patch_size == 0
-    seqlen = int(H/patch_size * W/patch_size)
-    print(f'Sequence length: {seqlen}')
+    seqlen = int(H / patch_size * W / patch_size)
+    print(f"Sequence length: {seqlen}")
 
     x = torch.randn(batch, in_channels, H, W)
 
     vit = VisionTransformer(
         dmodel,
-        
         # EncoderBlocks
         h,
-        hidden_mult, 
-        dropout, 
+        hidden_mult,
+        dropout,
         L,
-
         # PatchEmbeddings
         patch_size,
         in_channels,
-        
         # ClassificationHead
-        n_hidden, 
-        n_classes
+        n_hidden,
+        n_classes,
     )
 
-    print(f'Parameters: {sum(p.numel() for p in vit.parameters() if p.requires_grad) / 1e6 :.3f}M')
+    print(
+        f"Parameters: {sum(p.numel() for p in vit.parameters() if p.requires_grad) / 1e6 :.3f}M"
+    )
 
     logits = vit(x)
     assert logits.shape == (batch, n_classes)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     test_MSA_forward()
     compare_MSA_forward()

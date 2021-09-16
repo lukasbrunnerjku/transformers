@@ -17,33 +17,32 @@ n_classes = 100
 
 assert H % patch_size == 0
 assert W % patch_size == 0
-seqlen = int(H/patch_size * W/patch_size)
-print(f'Sequence length: {seqlen}')
+seqlen = int(H / patch_size * W / patch_size)
+print(f"Sequence length: {seqlen}")
 
 x = torch.randn(batch, in_channels, H, W)
 
 vit = VisionTransformer(
     dmodel,
-    
     # EncoderBlocks
     h,
-    hidden_mult, 
-    dropout, 
+    hidden_mult,
+    dropout,
     L,
-
     # PatchEmbeddings
     patch_size,
     in_channels,
-    
     # ClassificationHead
-    n_hidden, 
-    n_classes
+    n_hidden,
+    n_classes,
 )
-print(f'Parameters: {sum(p.numel() for p in vit.parameters() if p.requires_grad) / 1e6 :.3f}M')
+print(
+    f"Parameters: {sum(p.numel() for p in vit.parameters() if p.requires_grad) / 1e6 :.3f}M"
+)
 
 t_cpu = benchmark.Timer(
-    stmt='with torch.no_grad(): vit(x)',
-    globals={'x': x, 'vit': vit})
+    stmt="with torch.no_grad(): vit(x)", globals={"x": x, "vit": vit}
+)
 
 print(t_cpu.timeit(100))
 
@@ -51,25 +50,22 @@ x = torch.randn(batch, in_channels, H, W).cuda()
 
 vit = VisionTransformer(
     dmodel,
-    
     # EncoderBlocks
     h,
-    hidden_mult, 
-    dropout, 
+    hidden_mult,
+    dropout,
     L,
-
     # PatchEmbeddings
     patch_size,
     in_channels,
-    
     # ClassificationHead
-    n_hidden, 
-    n_classes
+    n_hidden,
+    n_classes,
 ).cuda()
 
 t_gpu = benchmark.Timer(
-    stmt='with torch.no_grad(): vit(x)',
-    globals={'x': x, 'vit': vit})
+    stmt="with torch.no_grad(): vit(x)", globals={"x": x, "vit": vit}
+)
 
 print(t_gpu.timeit(100))
 

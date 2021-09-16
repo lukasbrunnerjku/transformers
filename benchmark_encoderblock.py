@@ -9,8 +9,8 @@ x = torch.randn(batch, seqlen, dmodel)
 block = EncoderBlock(dmodel, h, hidden_mult, dropout)
 
 t_cpu = benchmark.Timer(
-    stmt='with torch.no_grad(): block(x)',
-    globals={'x': x, 'block': block})
+    stmt="with torch.no_grad(): block(x)", globals={"x": x, "block": block}
+)
 
 print(t_cpu.timeit(100))
 
@@ -18,8 +18,8 @@ block = EncoderBlock(dmodel, h, hidden_mult, dropout).cuda()
 x = torch.randn(batch, seqlen, dmodel).cuda()
 
 t_gpu = benchmark.Timer(
-    stmt='with torch.no_grad(): block(x)',
-    globals={'x': x, 'block': block})
+    stmt="with torch.no_grad(): block(x)", globals={"x": x, "block": block}
+)
 
 print(t_gpu.timeit(100))
 
