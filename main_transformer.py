@@ -2,7 +2,6 @@
 
 
 import os
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,6 +13,8 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.optim.lr_scheduler import OneCycleLR
 from torchmetrics.functional import accuracy
+
+from .modules import VisionTransformer
 
 
 PATH_DATASETS = os.environ.get("PATH_DATASETS", ".")
@@ -47,17 +48,42 @@ cifar10_dm = CIFAR10DataModule(
 )
 
 
+# https://medium.com/pytorch/training-compact-transformers-from-scratch-in-30-minutes-with-pytorch-ff5c21668ed5
+
+
 def create_model():
-    model = torchvision.models.resnet18(pretrained=False, num_classes=10)
-    model.conv1 = nn.Conv2d(
-        3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+
+    patch_size = 8
+    H, W = 32, 32
+
+    assert H % patch_size == 0
+    assert W % patch_size == 0
+    seqlen = int(H / patch_size * W / patch_size)
+    # print(f"Sequence length: {seqlen}")
+
+    model = VisionTransformer(
+        dmodel=512,
+        # EncoderBlocks
+        h=8,
+        hidden_mult=4,
+        dropout=0.1,
+        L=8,
+        # PatchEmbeddings
+        patch_size=patch_size,
+        in_channels=3,
+        # ClassificationHead
+        n_hidden=1024,
+        n_classes=10,
     )
-    model.maxpool = nn.Identity()
+
+    params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    # print(f"Parameters: {params / 1e6 :.3f}M")
+
     return model
 
 
-class LitResnet(LightningModule):
-    def __init__(self, lr=0.05):
+class LitVisionTransformer(LightningModule):
+    def __init__(self, lr=8e-4):
         super().__init__()
 
         self.save_hyperparameters()
@@ -92,17 +118,19 @@ class LitResnet(LightningModule):
         self.evaluate(batch, "test")
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(
+        optimizer = torch.optim.Adam(
             self.parameters(),
             lr=self.hparams.lr,
-            momentum=0.9,
-            weight_decay=5e-4,
+            betas=(0.9, 0.999),
+            weight_decay=0.1,
         )
         steps_per_epoch = 45000 // BATCH_SIZE
         scheduler_dict = {
             "scheduler": OneCycleLR(
                 optimizer,
-                0.1,
+                self.hparams.lr * 10,
+                div_factor=80,
+                final_div_factor=1,
                 epochs=self.trainer.max_epochs,
                 steps_per_epoch=steps_per_epoch,
             ),
@@ -115,16 +143,21 @@ if __name__ == "__main__":
 
     seed_everything(42)
 
-    model = LitResnet(lr=0.05)
+    model = LitVisionTransformer()
     model.datamodule = cifar10_dm
 
     trainer = Trainer(
         progress_bar_refresh_rate=10,
         max_epochs=30,
         gpus=AVAIL_GPUS,
-        logger=TensorBoardLogger("lightning_logs/", name="resnet"),
+        logger=TensorBoardLogger("lightning_logs/", name="vit"),
         callbacks=[LearningRateMonitor(logging_interval="step")],
     )
 
     trainer.fit(model, cifar10_dm)
     trainer.test(model, datamodule=cifar10_dm)
+
+    """
+    DATALOADER:0 TEST RESULTS
+
+    """
