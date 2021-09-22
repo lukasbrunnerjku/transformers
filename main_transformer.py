@@ -53,7 +53,7 @@ cifar10_dm = CIFAR10DataModule(
 
 def create_model():
 
-    patch_size = 8
+    patch_size = 4
     H, W = 32, 32
 
     assert H % patch_size == 0
@@ -62,11 +62,11 @@ def create_model():
     # print(f"Sequence length: {seqlen}")
 
     model = VisionTransformer(
-        dmodel=512,
+        dmodel=128,
         # EncoderBlocks
         h=8,
         hidden_mult=4,
-        dropout=0.1,
+        dropout=0.0,
         L=8,
         # PatchEmbeddings
         patch_size=patch_size,
@@ -122,7 +122,7 @@ class LitVisionTransformer(LightningModule):
             self.parameters(),
             lr=self.hparams.lr,
             betas=(0.9, 0.999),
-            weight_decay=0.1,
+            weight_decay=0.01,
         )
         steps_per_epoch = 45000 // BATCH_SIZE
         scheduler_dict = {
